@@ -1,4 +1,4 @@
-from flask import request, url_for
+from flask import request, url_for, abort
 import bcrypt
 from .. import db
 from ..models.user import User
@@ -7,30 +7,37 @@ from ..utils.response import generate_response
 
 class UserController:
     def get_by_id(self, id):
-        return db.Query(User).filter_by(id=id).first()
+        return User.query.filter_by(id=id).first()
 
     def get_by_email(self, email):
-        return db.Query(User).filter_by(email=email).first()
+        return User.query.filter_by(email=email).first()
 
     def get_by_tagname(self, tagname):
-        return db.Query(User).filter_by(tagname=tagname)
+        return User.query.filter_by(tagname=tagname)
 
     def create_user(self):
-        newUser = {
-            "email": request.json.get("email"),
-            "fname": request.json.get("fname"),
-            "mname": request.json.get("mname"),
-            "lname": request.json.get("lname"),
+        email = request.json.get("email")
+        fname = request.json.get("fname")
+        mname = request.json.get("mname")
+        lname = request.json.get("lname")
+        password = request.json.get("password")
+        if email is None or fname is None or lname is None or password is None:
+            return abort(400)
+        new_user = {
+            "email": email,
+            "fname": fname,
+            "mname": mname,
+            "lname": lname,
             "password": bcrypt.hashpw(
-                request.json.get("password").encode("utf-8"), bcrypt.gensalt()
+                password.encode("utf-8"), bcrypt.gensalt()
             ).decode("utf-8"),
         }
-        newUser = User(**newUser)
-        db.session.add(newUser)
+        new_user = User(**new_user)
+        db.session.add(new_user)
         db.session.commit()
         return (
             generate_response(
-                data={"id": newUser.id, "login": url_for("auth.login")},
+                data={"id": new_user.id, "login": url_for("auth.login")},
                 message="User created",
                 status=201,
             ),

@@ -33,21 +33,20 @@ class Auth:
     def login(self):
         email = request.json.get("email")
         password = request.json.get("password")
+        if email is None or password is None:
+            return abort(400)
         user = self.user_controller.get_by_email(email)
-        if user is None:
+        if user is None or not bcrypt.checkpw(
+            password.encode("utf-8"), user.password.encode("utf-8")
+        ):
             return (
                 generate_response(message="Username or Password incorrect", status=403),
                 403,
             )
-        if bcrypt.checkpw(password.encode("utf-8"), user.password.encode("utf-8")):
-            token = token_generator.encode_token(user)
-            res = generate_response(message="Login success", status=200), 200
-            res.set_cookie(AUTH_TOKEN_HEADER, token, secure=True)
-            return res, 200
-        return (
-            generate_response(message="Username or Password incorrect", status=403),
-            403,
-        )
+        token = token_generator.encode_token(user)
+        res = generate_response(message="Login success", status=200)
+        res.set_cookie(AUTH_TOKEN_HEADER, token, secure=True, httponly=True)
+        return res, 200
 
     def current_user(self):
         token = request.cookies.get(AUTH_TOKEN_HEADER)
@@ -57,5 +56,5 @@ class Auth:
 
     def logout(self):
         response = generate_response(message="Logout Success", status=200)
-        response.delete_cookie(AUTH_TOKEN_HEADER)
+        response.delete_cookie(AUTH_TOKEN_HEADER, secure=True, httponly=True)
         return response

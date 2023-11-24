@@ -15,10 +15,16 @@ def create_app():
 
     db.init_app(app)
     migrate.init_app(app, db)
+
+    # import models
+    from .models.user import User
+    from .models.transaction import Transaction
+
     with app.app_context():
         db.create_all()
     from .routes.auth import auth_bp
 
+    # import blueprints
     app.register_blueprint(auth_bp)
     # app.register_blueprint(user_bp)
     return app
