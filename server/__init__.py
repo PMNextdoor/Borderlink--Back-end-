@@ -3,7 +3,6 @@ from flask import Flask
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from flask_status import FlaskStatus
 from .configs.config import Config
 from dotenv import load_dotenv, find_dotenv
 
@@ -18,7 +17,6 @@ migrate = Migrate()
 def create_app():
     app = Flask(__name__)
     CORS(app, origins=getenv("FRONTEND_DOMAIN"), supports_credentials=True)
-    FlaskStatus(app)
     app.config.from_object(Config())
 
     db.init_app(app)
