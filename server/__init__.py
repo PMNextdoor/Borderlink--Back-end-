@@ -1,7 +1,12 @@
+from os import getenv
 from flask import Flask
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 from .configs.config import Config
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
 
 # from .routes.user import user_bp
 
@@ -11,6 +16,7 @@ migrate = Migrate()
 
 def create_app():
     app = Flask(__name__)
+    CORS(app, origins=getenv("FRONTEND_DOMAIN"), supports_credentials=True)
     app.config.from_object(Config())
 
     db.init_app(app)
