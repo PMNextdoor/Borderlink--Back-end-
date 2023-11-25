@@ -1,17 +1,22 @@
 from flask import Blueprint
 from ..controllers.transaction import transaction_controller
-from . import auth
+from ..controllers.auth import auth_controller
 
 
-transaction_bp = Blueprint("transaction", __name__, url_prefix="/api/tnx")
+transaction_bp = Blueprint("transaction", __name__, url_prefix="/api/txn")
 
 
 # /pay
-@transaction_bp.route("/pay", methods=["POST"], strict_slashes=False)
-@auth.login_required
+@transaction_bp.route("/fund-wallet", methods=["POST"], strict_slashes=False)
+@auth_controller.login_required
 def create_payment_link():
-    return transaction_controller.create_payment_link()
+    return transaction_controller.fund_wallet()
 
 
 # /payment-webhook
+@transaction_bp.route("/webhook", methods=["POST"], strict_slashes=False)
+def payment_webhook():
+    return transaction_controller.webhook()
+
+
 # /transfer

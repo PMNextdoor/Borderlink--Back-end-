@@ -15,3 +15,5 @@ class Transaction(BaseModel, db.Model):
     currency_to = sa.Column(sa.String)
     from_user = sa.Column(sa.String(250), sa.ForeignKey("users.id"))
     to_user = sa.Column(sa.String(250), sa.ForeignKey("beneficiaries.id"))
+    credited = sa.Column(sa.String(1), default="N")
+    action = sa.Column(sa.String, nullable=False)

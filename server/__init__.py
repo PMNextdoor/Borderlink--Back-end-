@@ -19,13 +19,16 @@ def create_app():
     # import models
     from .models.user import User
     from .models.transaction import Transaction
+    from .models.beneficiary import Beneficiary
 
     with app.app_context():
         db.create_all()
     from .routes.auth import auth_bp
+    from .routes.transaction import transaction_bp
 
     # import blueprints
     app.register_blueprint(auth_bp)
+    app.register_blueprint(transaction_bp)
     # app.register_blueprint(user_bp)
     return app
 

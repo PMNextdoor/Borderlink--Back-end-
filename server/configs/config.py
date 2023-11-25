@@ -8,7 +8,7 @@ class Config(object):
     """Set Flask configuration from .env file."""
 
     # General Config
-    DEBUG = False
+    DEBUG = True
     TESTING = False
     SECRET_KEY = getenv("SECRET_KEY", None)
     FLASK_ENV = getenv("FLASK_ENV")

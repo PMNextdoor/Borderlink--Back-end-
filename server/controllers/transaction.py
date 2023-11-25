@@ -3,42 +3,26 @@ from datetime import datetime
 import requests
 from rave_python.rave_misc import generateTransactionReference
 from rave_python import Rave
-from flask import request, jsonify
+from flask import request, jsonify, abort
+from ..controllers.user import user_controller
 from ..models.transaction import Transaction
 from ..utils.response import generate_response
 from .. import db
 
-rave = Rave(getenv("FLW_PUBLIC_KEY"), getenv("FLW_SECRET_KEY"))
+rave = Rave(getenv("FLW_PUBLIC_KEY"), getenv("FLW_SECRET_KEY"), usingEnv=False)
 
 
 class TransactionController:
     FRONTEND_REDIRECT_URL = "/payment/confirm"
     FLW_CREATE_PAYMENT_URL = "https://api.flutterwave.com/v3/payments"
 
-    def create_payment_link(self):
-        # extract json
-        amount = request.json.get("amount")
-        currency = request.json.get("currency")
-
-        txn = Transaction()
-        txn.txn_type = "credit"
-        txn.description = "fund wallet"
-        txn.txn_status = "pending"
-        txn.amount = amount
-        txn.txn_ref = generateTransactionReference()
-        txn.currency_from = currency
-        txn.currency_to = currency
-        txn.from_user = request.current_user.id
-
-        db.session.add(txn)
-        db.session.commit()
-
+    def create_payment_link(self, amount, currency, txn_ref):
         headers = {
             "Authorization": f"Bearer {getenv('FLW_SECRET_KEY')}",
             "Content-Type": "application/json",
         }
         payload = {
-            "tx_ref": txn.txn_ref,
+            "tx_ref": txn_ref,
             "amount": amount,
             "currency": currency,
             "redirect_url": self.FRONTEND_REDIRECT_URL,
@@ -75,7 +59,32 @@ class TransactionController:
             print(f"Request Error: {err}")
             raise
 
+    def fund_wallet(self):
+        # extract json
+        amount = request.json.get("amount")
+        currency = request.json.get("currency")
+
+        if amount is None or currency is None:
+            abort(400)
+
+        txn = Transaction()
+        txn.txn_type = "credit"
+        txn.description = "fund wallet"
+        txn.action = "fund wallet"
+        txn.txn_status = "pending"
+        txn.amount = amount
+        txn.txn_ref = generateTransactionReference()
+        txn.currency_from = currency
+        txn.currency_to = currency
+        txn.from_user = request.current_user.id
+
+        db.session.add(txn)
+        db.session.commit()
+
+        return self.create_payment_link(amount, currency, txn.txn_ref)
+
     def webhook(self):
+        print("webhook called")
         secret_hash = getenv("FLW_SECRET_HASH")
         signature = request.headers.get("verifi-hash")
 
@@ -87,19 +96,33 @@ class TransactionController:
         txn_ref = payload.get("tx_ref")
 
         txn = Transaction.query.filter_by(txn_ref=txn_ref).first()
+        if txn is None:
+            return abort(404)
 
-        txn.status = payload.get("status")
-        txn.txn_time = datetime.strptime(
-            payload.get("created_at"), "%Y-%m-%dT%H:%M:%S.%fZ"
-        )
+        confirmation = rave.Account.verify(txn_ref)
+        if confirmation.get("status") == "success":
+            if txn.credited == "N":
+                txn.status = payload.get("status")
+                txn.txn_time = datetime.strptime(
+                    payload.get("created_at"), "%Y-%m-%dT%H:%M:%S.%fZ"
+                )
 
-        db.session.add(txn)
-        db.session.commit()
-
-        # Do something (that doesn't take too long) with the payload
-        # Your processing logic goes here
-
+                if txn.description == "fund wallet":
+                    self.credit_user(
+                        request.current_user.id, float(confirmation.get("amount"))
+                    )
+                txn.credited = "Y"
+                db.session.add(txn)
+                db.session.commit()
         return jsonify({"message": "Webhook received successfully"}), 200
 
+    def credit_user(self, user_id, amount):
+        user = user_controller.get_by_id(user_id)
+        user.acc_balance += amount
 
-transaction_controller = Transaction()
+        db.session.add(user)
+        db.session.commit()
+        print(user)
+
+
+transaction_controller = TransactionController()

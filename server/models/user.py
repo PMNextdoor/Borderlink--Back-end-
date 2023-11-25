@@ -13,3 +13,6 @@ class User(BaseModel, db.Model):
     tagname = sa.Column(sa.String(250), unique=True)
     acc_balance = sa.Column(sa.DOUBLE_PRECISION(), default=0)
     default_currency = sa.Column(sa.String(3))
+
+    def __repr__(self) -> str:
+        return f"<User {self.acc_balance} {self.default_currency} {self.fname} {self.lname}>"

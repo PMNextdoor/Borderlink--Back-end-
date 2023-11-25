@@ -1,5 +1,4 @@
 import sqlalchemy as sa
-from .. import db
 from datetime import datetime
 import uuid
 
@@ -14,3 +13,7 @@ class BaseModel:
     )
     created_at = sa.Column(sa.DateTime, default=datetime.now())
     updated_at = sa.Column(sa.DateTime, default=datetime.now())
+
+    def __setattr__(self, name, value):
+        self.updated_at = datetime.now()
+        object.__setattr__(self._target, name, value)

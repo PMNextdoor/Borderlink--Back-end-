@@ -8,7 +8,7 @@ from ..utils.http_header import AUTH_TOKEN_HEADER
 from .user import UserController
 
 
-class Auth:
+class AuthController:
     user_controller = UserController()
 
     def login_required(self, func):
@@ -58,3 +58,6 @@ class Auth:
         response = generate_response(message="Logout Success", status=200)
         response.delete_cookie(AUTH_TOKEN_HEADER, secure=True, httponly=True)
         return response
+
+
+auth_controller = AuthController()
