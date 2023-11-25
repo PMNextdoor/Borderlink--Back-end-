@@ -1,13 +1,12 @@
 from flask import Blueprint
-from ..controllers.auth import Auth
-from ..controllers.user import UserController
+from ..controllers.user import user_controller
+from . import auth
+
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
-auth = Auth()
-user_controller = UserController()
 
 
-@auth_bp.route("/login", strict_slashes=False)
+@auth_bp.route("/login", methods=["POST"], strict_slashes=False)
 def login():
     return auth.login()
 
@@ -17,6 +16,6 @@ def logout():
     return auth.logout()
 
 
-@auth_bp.route("/register", strict_slashes=False)
+@auth_bp.route("/register", methods=["POST"], strict_slashes=False)
 def register():
     return user_controller.create_user()

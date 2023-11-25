@@ -13,9 +13,9 @@ def generate_response(data=None, message=None, status=400):
     :return: A dictionary with the keys: data, message, status.
     """
     if status in [HTTP_200_OK, HTTP_201_CREATED]:
-        status_bool = True
+        status_bool = "success"
     else:
-        status_bool = False
+        status_bool = "failure"
 
     return jsonify(
         {

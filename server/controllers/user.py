@@ -43,3 +43,6 @@ class UserController:
             ),
             201,
         )
+
+
+user_controller = UserController()
