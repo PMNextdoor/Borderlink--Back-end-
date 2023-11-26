@@ -4,7 +4,7 @@ import requests
 from rave_python.rave_misc import generateTransactionReference
 from rave_python import Rave
 from flask import request, jsonify, abort
-from ..controllers.user import user_controller
+from ..controllers.account import account_controller
 from ..models.transaction import Transaction
 from ..utils.response import generate_response
 from .. import db
@@ -13,7 +13,7 @@ rave = Rave(getenv("FLW_PUBLIC_KEY"), getenv("FLW_SECRET_KEY"), usingEnv=False)
 
 
 class TransactionController:
-    FRONTEND_REDIRECT_URL = "/payment/confirm"
+    FRONTEND_REDIRECT_URL = "/"
     FLW_CREATE_PAYMENT_URL = "https://api.flutterwave.com/v3/payments"
 
     def create_payment_link(self, amount, currency, txn_ref):
@@ -68,15 +68,18 @@ class TransactionController:
             abort(400)
 
         txn = Transaction()
+        txn.user_id = request.current_user.id
+        txn.user_id = request.current_user.id
         txn.txn_type = "credit"
         txn.description = "fund wallet"
         txn.action = "fund wallet"
         txn.txn_status = "pending"
         txn.amount = amount
         txn.txn_ref = generateTransactionReference()
-        txn.currency_from = currency
-        txn.currency_to = currency
-        txn.from_user = request.current_user.id
+        txn.currency = currency
+        txn.to_acc = account_controller.get_account_by_currency(
+            request.current_user.id, currency
+        ).id
 
         db.session.add(txn)
         db.session.commit()
@@ -107,22 +110,67 @@ class TransactionController:
                     payload.get("created_at"), "%Y-%m-%dT%H:%M:%S.%fZ"
                 )
 
-                if txn.description == "fund wallet":
-                    self.credit_user(
-                        request.current_user.id, float(confirmation.get("amount"))
+                if txn.action == "fund wallet":
+                    user_account = account_controller.get_account_by_currency(request)
+                    account_controller.credit_account(
+                        request.current_user.id,
+                        float(confirmation.get("amount")),
+                        confirmation.get("currency"),
                     )
                 txn.credited = "Y"
                 db.session.add(txn)
                 db.session.commit()
         return jsonify({"message": "Webhook received successfully"}), 200
 
-    def credit_user(self, user_id, amount):
-        user = user_controller.get_by_id(user_id)
-        user.acc_balance += amount
+    def pay_app_user(self):
+        # extract json
+        tagname = request.json.get("tagname")
+        amount = request.json.get("amount")
+        currency = request.json.get("currency")
+        to_currency = request.json.get("to_currency")
+        rate = request.json.get("rate")
+        description = request.json.get("description")
 
-        db.session.add(user)
+        # get request data
+        # create transaction
+        # debit user
+        # credit user
+        if tagname is None or amount is None or currency is None:
+            abort(400)
+
+        txn = Transaction()
+        txn.user_id = request.current_user.id
+        txn.txn_type = "debit"
+        txn.description = description
+        txn.action = "pay user"
+        txn.txn_status = "pending"
+        txn.amount = amount
+        txn.txn_ref = generateTransactionReference()
+        txn.currency_from = currency
+        txn.currency_to = to_currency
+        txn.rate = rate
+        from_acc = account_controller.get_account_by_currency(
+            request.current_user.id, currency
+        )
+        txn.from_acc = from_acc.id
+        to_acc = account_controller.get_account_by_acc_number(tagname, "BDL")
+        txn.to_acc = to_acc.id
+
+        if not account_controller.debit_account(from_acc.id, amount):
+            return generate_response(message="Insufficient balance", status=402), 402
+        account_controller.credit_account(to_acc.id, amount * rate)
+
+        txn.txn_status = "success"
+        txn.txn_time = datetime.now()
+        db.session.add(txn)
         db.session.commit()
-        print(user)
+        return generate_response(message="Transfer success", status=200), 200
+
+    def pay_bank(self):
+        pass
+
+    def withdraw(self):
+        pass
 
 
 transaction_controller = TransactionController()

@@ -20,3 +20,7 @@ def payment_webhook():
 
 
 # /transfer
+@transaction_bp.route("/payuser", methods=["POST"], strict_slashes=False)
+@auth_controller.login_required
+def pay_user():
+    return transaction_controller.pay_app_user()
