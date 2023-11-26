@@ -16,7 +16,7 @@ migrate = Migrate()
 
 def create_app():
     app = Flask(__name__)
-    CORS(app, origins=getenv("FRONTEND_DOMAIN"), supports_credentials=True)
+    cors = CORS(app, supports_credentials=True)
     app.config.from_object(Config())
 
     db.init_app(app)
