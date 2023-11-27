@@ -8,8 +8,6 @@ from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
 
-# from .routes.user import user_bp
-
 db = SQLAlchemy()
 migrate = Migrate()
 
@@ -30,15 +28,18 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+    # import blueprints
     from .routes.auth import auth_bp
     from .routes.transaction import transaction_bp
     from .routes.beneficiary import beneficiary_bp
+    from .routes.user import user_bp
+    from .routes.tagname import tagname_bp
 
-    # import blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(transaction_bp)
     app.register_blueprint(beneficiary_bp)
-    # app.register_blueprint(user_bp)
+    app.register_blueprint(user_bp)
+    app.register_blueprint(tagname_bp)
     return app
 
 

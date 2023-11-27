@@ -14,7 +14,7 @@ class UserController:
         return User.query.filter_by(email=email).first()
 
     def get_by_tagname(self, tagname):
-        return User.query.filter_by(tagname=tagname)
+        return User.query.filter_by(tagname=tagname).first()
 
     def create_user(self):
         email = request.json.get("email")
@@ -38,6 +38,7 @@ class UserController:
             "fname": fname,
             "mname": mname,
             "lname": lname,
+            "tagname": tagname,
             "password": bcrypt.hashpw(
                 password.encode("utf-8"), bcrypt.gensalt()
             ).decode("utf-8"),

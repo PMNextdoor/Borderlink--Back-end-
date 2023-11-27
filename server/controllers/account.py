@@ -1,3 +1,4 @@
+from flask import request
 from ..utils.response import generate_response
 from ..models.account import Account
 from .. import db
@@ -5,6 +6,10 @@ from ..controllers.user import user_controller
 
 
 class AccountController:
+    def get_user_accounts(self):
+        accounts = Account.query.filter_by(user_id=request.current_user.id).all()
+        return [account.to_json() for account in accounts]
+
     def get_account_by_id(self, account_id):
         account = Account.query.filter_by(id=account_id).first()
         return account
