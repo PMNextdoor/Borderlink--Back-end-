@@ -81,7 +81,6 @@ class TransactionController:
 
         txn = Transaction()
         txn.user_id = request.current_user.id
-        txn.user_id = request.current_user.id
         txn.txn_type = "credit"
         txn.description = "fund wallet"
         txn.action = "fund wallet"
