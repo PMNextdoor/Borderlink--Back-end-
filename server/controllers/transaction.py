@@ -16,6 +16,18 @@ class TransactionController:
     FRONTEND_REDIRECT_URL = "/"
     FLW_CREATE_PAYMENT_URL = "https://api.flutterwave.com/v3/payments"
 
+    def get_all_transactions(self):
+        user_id = request.current_user.id
+        transactions = Transaction.query.filter_by(user_id=user_id).all()
+        return (
+            generate_response(
+                data=[transaction.to_json() for transaction in transactions],
+                message="User Transactions",
+                status=200,
+            ),
+            200,
+        )
+
     def create_payment_link(self, amount, currency, txn_ref):
         headers = {
             "Authorization": f"Bearer {getenv('FLW_SECRET_KEY')}",

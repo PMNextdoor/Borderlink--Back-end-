@@ -6,6 +6,13 @@ from ..controllers.auth import auth_controller
 transaction_bp = Blueprint("transaction", __name__, url_prefix="/api/txn")
 
 
+# all transactions
+@transaction_bp.route("/", strict_slashes=False)
+@auth_controller.login_required
+def all_transactions():
+    return transaction_controller.get_all_transactions()
+
+
 # /pay
 @transaction_bp.route("/fund-wallet", methods=["POST"], strict_slashes=False)
 @auth_controller.login_required

@@ -13,3 +13,6 @@ class BaseModel:
     )
     created_at = sa.Column(sa.DateTime, default=datetime.now())
     updated_at = sa.Column(sa.DateTime, default=datetime.now())
+
+    def to_json(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
